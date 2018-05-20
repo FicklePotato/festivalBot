@@ -1,0 +1,5 @@
+media
+*.json
+*.log
+.idea
+__pycache__
