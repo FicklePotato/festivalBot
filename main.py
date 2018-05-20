@@ -1,7 +1,11 @@
 from telegram.ext import CommandHandler, Updater, MessageHandler, Filters, BaseFilter
 from utils import gen_out_path
+from activity_logger import *
 import logging
 
+
+# TODO: manage to recover messages after being offline
+# TODO: change the token and take it from a local file
 TOKEN = "559626786:AAGKYE0MArTga7alcjpCltov9hjsHQuec9Y"
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO,
                     filename=r"C:\Projects\festivalBot\err.log")
@@ -9,25 +13,29 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 # TODO: manage to write fucking unicode FML i hate encodings
 logger = logging.getLogger(__name__)
-# TODO: serialize this to a file group_UUID: (latest_name, score, filepath, etc)
-SCOREBOARD = {}
+groups = load_groups(JSON_PATH)
 
-# TODO: try a mix of command photo and vid
+
+def log_point(update):
+    try:
+        if int(update.message.text) not in MISSION_SCORE:
+            return False
+        # TODO: add the points to the relevant group
+    except ValueError:
+        #TODO: this
+        logger.error('Could not log point, from user %s message %s')
+        return False
 
 
 def error(bot, update, error):
     """Log Errors caused by Updates."""
-    logger.warning(bytes('Update "%s" caused error "%s"', update.message.text, error), "utf-8")
-
+    logger.warning('Update "%s" caused error "%s"', update.message.text, error)
 
 class CostumFilter(BaseFilter):
     def filter(self, message):
         return message.text.startswith("#") or message.photo
 
-
-# Remember to initialize the class.
 my_filter = CostumFilter()
-
 
 def start(bot, update):
     """
@@ -36,16 +44,6 @@ def start(bot, update):
     """
     # TODO: add a normal start message with hebrew!
     bot.send_message(chat_id=update.message.chat_id, text="I'm a bot, please talk to me!")
-
-#def add_user_to_group(bot, update):
-
-
-def log_point(bot, update):
-#    if not update.message.text.endswith("point"):
-#        CHATS
-
-    bot.send_message(chat_id=update.message.chat_id, text=update.message.text.split(' ')[1])
-
 
 def save_photo(bot, update):
     # TODO: use message.from_user.is_bot and ignore all bot messages
@@ -70,7 +68,6 @@ def main():
     updater = Updater(token=TOKEN)
     dispatcher = updater.dispatcher
     dispatcher.add_handler(CommandHandler('start', start))
-    dispatcher.add_handler(CommandHandler('point', log_point))
     # dispatcher.add_handler(CommandHandler('join', add_user_to_group))
     # dispatcher.add_handler(CommandHandler('score', get_score))
     dispatcher.add_handler(MessageHandler(Filters.photo, save_photo))

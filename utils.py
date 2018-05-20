@@ -4,6 +4,7 @@ import time
 ROOT_OUT_PATH = r"C:\Projects\festivalBot\media"
 
 
+# TODO: get a group object and generate a path
 def gen_out_path(file_type="png", group_id="Default", curr_time=None):
     out_dir = os.path.join(ROOT_OUT_PATH, group_id)
     if not os.path.isdir(out_dir):

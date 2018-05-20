@@ -1,4 +1,5 @@
 import json
+import os
 
 MAX_TIMES = 3
 MISSION_SCORE = {1: 1, 2: 2, 3: 1}
@@ -61,6 +62,8 @@ def dump_groups(json_path, groups):
 
 
 def load_groups(json_path):
+    if not os.path.isfile(json_path):
+        return []
     with open(json_path, "r") as f:
         groups = json.load(f)
     return [Group.from_json(g) for g in groups]
