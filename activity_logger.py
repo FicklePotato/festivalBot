@@ -5,7 +5,7 @@ MAX_TIMES = 3
 MISSION_SCORE = {'1': 1, '2': 2, '3': 1}
 ID_LOC = 0
 MISSION_LOC = 1
-JSON_PATH = r"C:\Projects\festivalBot\groups.json"
+JSON_PATH = r"groups.json"
 
 
 class Group(object):

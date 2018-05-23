@@ -3,7 +3,7 @@ import time
 import sched
 from activity_logger import dump_groups, JSON_PATH
 
-ROOT_OUT_PATH = r"C:\Projects\festivalBot\media"
+ROOT_OUT_PATH = r"media"
 DUMP_TIME = 10
 
 # TODO: get a group object and generate a path
