@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 from telegram.ext import CommandHandler, Updater, MessageHandler, Filters, BaseFilter
 from utils import gen_out_path, enter_dump_cycle
 from activity_logger import *
@@ -9,7 +12,7 @@ import logging
 TOKEN = "559626786:AAGKYE0MArTga7alcjpCltov9hjsHQuec9Y"
 ADMIN_IDS = [409589602, 596310448]
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO,
-                    filename=r"C:\Projects\festivalBot\err.log")
+                    filename=r"err.log")
 
 
 # TODO: manage to write fucking unicode FML i hate encodings
