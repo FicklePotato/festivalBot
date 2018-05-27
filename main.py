@@ -25,7 +25,7 @@ def log_point(bot, update):
         if update.message.chat.id not in groups:
             groups[update.message.chat.id] = Group(update.message.chat.id, [], update.message.chat.title)
         if mission in groups[update.message.chat.id].completed_missions:
-            bot.send_message(chat_id=update.message.chat.id, text="המשימה {0} כבר הושלמה :O)".format(mission))
+            bot.send_message(chat_id=update.message.chat.id, text="המשימה {0} כבר הושלמה.".format(mission))
         else:
             groups[update.message.chat.id].complete_mission(mission)
             bot.send_message(chat_id=update.message.chat.id, text="קיבלתם {0} נקודות!".format(MISSION_SCORE[mission]))
@@ -48,14 +48,15 @@ class CostumFilter(BaseFilter):
         # TODO filter out bots
         return message.chat.type == "group"
 
+
 class AdminFilter(BaseFilter):
     def filter(self, message):
         # TODO filter out bots
         return message.chat.id in ADMIN_IDS
 
 my_filter = CostumFilter()
-
 admin_filter = AdminFilter()
+
 
 def start(bot, update):
     """
@@ -67,7 +68,8 @@ def start(bot, update):
         bot.send_message(chat_id=update.message.chat.id, text="I'm a bot, please talk to me!")
 
 def help(bot, update):
-    bot.send_message(chat_id=update.message.chat.id, text="/score - show your group's score."
+    if my_filter.filter(update.message):
+        bot.send_message(chat_id=update.message.chat.id, text="/score - show your group's score."
                                                           "")
 
 def save_photo(bot, update):
@@ -103,10 +105,6 @@ def get_allscore(bot, update):
 
 def main():
     try:
-        for g in groups.values():
-            print(g.completed_missions)
-        print(groups)
-        # TODO: send a welcome message when added to a group
         updater = Updater(token=TOKEN)
         dispatcher = updater.dispatcher
         dispatcher.add_handler(CommandHandler('start', start))
@@ -117,7 +115,6 @@ def main():
         dispatcher.add_error_handler(error)
         updater.start_polling()
         print("Running")
-        print(groups)
         enter_dump_cycle(groups)
         updater.idle()
     finally:

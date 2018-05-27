@@ -25,7 +25,7 @@ class Group(object):
 
 def dump_groups(json_path, groups):
     with open(json_path, "w") as f:
-        json.dump({k: (groups[k].title, groups[k].completed_missions) for k in groups}, f)
+        json.dump({k: (groups[k].completed_missions, groups[k].title) for k in groups}, f)
 
 
 def load_groups(json_path):
