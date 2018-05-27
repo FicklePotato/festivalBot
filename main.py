@@ -7,6 +7,7 @@ import logging
 # TODO: manage to recover messages after being offline
 # TODO: change the token and take it from a local file
 TOKEN = "559626786:AAGKYE0MArTga7alcjpCltov9hjsHQuec9Y"
+ADMIN_IDS = [409589602, 596310448]
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO,
                     filename=r"C:\Projects\festivalBot\err.log")
 
@@ -19,11 +20,10 @@ groups = load_groups(JSON_PATH)
 def log_point(bot, update):
     try:
         mission = update.message.caption
-        print(mission)
         if mission not in MISSION_SCORE:
             return False
         if update.message.chat.id not in groups:
-            groups[update.message.chat.id] = Group(update.message.chat.id, [])
+            groups[update.message.chat.id] = Group(update.message.chat.id, [], update.message.chat.title)
         if mission in groups[update.message.chat.id].completed_missions:
             bot.send_message(chat_id=update.message.chat.id, text="המשימה {0} כבר הושלמה :O)".format(mission))
         else:
@@ -48,8 +48,14 @@ class CostumFilter(BaseFilter):
         # TODO filter out bots
         return message.chat.type == "group"
 
+class AdminFilter(BaseFilter):
+    def filter(self, message):
+        # TODO filter out bots
+        return message.chat.id in ADMIN_IDS
+
 my_filter = CostumFilter()
 
+admin_filter = AdminFilter()
 
 def start(bot, update):
     """
@@ -58,8 +64,11 @@ def start(bot, update):
     """
     # TODO: add a normal start message with hebrew!
     if my_filter.filter(update.message):
-        bot.send_message(chat_id=update.message.chat_id, text="I'm a bot, please talk to me!")
+        bot.send_message(chat_id=update.message.chat.id, text="I'm a bot, please talk to me!")
 
+def help(bot, update):
+    bot.send_message(chat_id=update.message.chat.id, text="/score - show your group's score."
+                                                          "")
 
 def save_photo(bot, update):
     if update.message.photo:
@@ -68,7 +77,6 @@ def save_photo(bot, update):
         photo_file = update.message.photo[-1].get_file()
         # TODO: before downloading, check available space in case of spammers, send me a notification if there is a problem
         photo_file.download(gen_out_path(group_id=str(update.message.chat.id)))
-        bot.send_message(chat_id=update.message.chat_id, text="photo!")
 
 
 def save_vid(bot, update):
@@ -76,24 +84,38 @@ def save_vid(bot, update):
         log_point(bot, update)
         video = bot.get_file(update.message.video.file_id)
         video.download(gen_out_path("mpeg4", group_id=str(update.message.chat.id)))
-    bot.send_message(chat_id=update.message.chat_id, text="video!")
 
 
 def get_score(bot, update):
-    bot.send_message(chat_id=update.message.chat.id, text="You have {0} points!".format(groups[update.message.chat.id].get_score()))
+    if update.message.chat.id in groups:
+        bot.send_message(chat_id=update.message.chat.id, text="You have {0} points!".format(groups[update.message.chat.id].get_score()))
+    else:
+        # TODO: send something
+        pass
+
+
+def get_allscore(bot, update):
+    if admin_filter.filter(update.message):
+        msg = '\r\n'.join([' - '.join((g.title, str(g.get_score()))) for g in groups.values()])
+        if msg:
+            bot.send_message(chat_id=update.message.chat.id, text=msg)
 
 
 def main():
     try:
+        for g in groups.values():
+            print(g.completed_missions)
+        print(groups)
+        # TODO: send a welcome message when added to a group
         updater = Updater(token=TOKEN)
         dispatcher = updater.dispatcher
         dispatcher.add_handler(CommandHandler('start', start))
         dispatcher.add_handler(CommandHandler('score', get_score))
+        dispatcher.add_handler(CommandHandler('allscore', get_allscore))
         dispatcher.add_handler(MessageHandler(Filters.photo & my_filter, save_photo))
         dispatcher.add_handler(MessageHandler(Filters.video & my_filter, save_vid))
         dispatcher.add_error_handler(error)
         updater.start_polling()
-        # TODO: log the results to a file every x secs
         print("Running")
         print(groups)
         enter_dump_cycle(groups)
