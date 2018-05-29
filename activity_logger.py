@@ -33,6 +33,4 @@ def load_groups(json_path):
         return []
     with open(json_path, "r") as f:
         groups = json.load(f)
-    for k in groups:
-        print(groups[k][MISSION_LOC], groups[k][TITLE_LOC])
     return {int(k): Group(int(k), groups[k][MISSION_LOC], groups[k][TITLE_LOC]) for k in groups}

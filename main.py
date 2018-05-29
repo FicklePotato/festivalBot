@@ -29,21 +29,25 @@ def log_point(bot, update):
             groups[update.message.chat.id] = Group(update.message.chat.id, [], update.message.chat.title)
         if mission in groups[update.message.chat.id].completed_missions:
             bot.send_message(chat_id=update.message.chat.id, text="המשימה {0} כבר הושלמה.".format(mission))
+            return False
         else:
             groups[update.message.chat.id].complete_mission(mission)
             bot.send_message(chat_id=update.message.chat.id, text="קיבלתם {0} נקודות!".format(MISSION_SCORE[mission]))
+            return mission
     except (ValueError, TypeError) as e:
-        # TODO: this
-        logger.error('Could not log point, from user %s message %s', e)
+        logger.info('Could not log point, from user %s message %s', e)
         return False
 
 
 def error(bot, update, error):
     """Log Errors caused by Updates."""
-    if update is None:
-        logger.error("Got error %s", error)
-    else:
-        logger.warning('Update "%s" caused error "%s"', update.message.text, error)
+    try:
+        if update is None:
+            logger.error("Got error %s", error)
+        else:
+            logger.warning('Update "%s" caused error "%s"', update.message.text, error)
+    except (UnicodeDecodeError, UnicodeEncodeError):
+        pass
 
 
 class CostumFilter(BaseFilter):
@@ -70,30 +74,31 @@ def start(bot, update):
     if my_filter.filter(update.message):
         bot.send_message(chat_id=update.message.chat.id, text="I'm a bot, please talk to me!")
 
+
 def help(bot, update):
     if my_filter.filter(update.message):
-        bot.send_message(chat_id=update.message.chat.id, text="/score - show your group's score."
-                                                          "")
+        bot.send_message(chat_id=update.message.chat.id, text="/score - show your group's score.")
+
 
 def save_photo(bot, update):
     if update.message.photo:
-        # TODO: i noticed that when one photo is sent, i am recieving a list of images, need to get the largest one with a file size limit
-        log_point(bot, update)
-        photo_file = update.message.photo[-1].get_file()
-        # TODO: before downloading, check available space in case of spammers, send me a notification if there is a problem
-        photo_file.download(gen_out_path(group_id=str(update.message.chat.id)))
+        mission = log_point(bot, update)
+        if mission:
+            photo_file = update.message.photo[-1].get_file()
+            photo_file.download(gen_out_path(group_id=str(update.message.chat.id), prefix=mission))
 
 
 def save_vid(bot, update):
     if update.message.video:
-        log_point(bot, update)
-        video = bot.get_file(update.message.video.file_id)
-        video.download(gen_out_path("mpeg4", group_id=str(update.message.chat.id)))
+        mission = log_point(bot, update)
+        if mission:
+            video = bot.get_file(update.message.video.file_id)
+            video.download(gen_out_path("mpeg4", group_id=str(update.message.chat.id), prefix=mission))
 
 
 def get_score(bot, update):
     if update.message.chat.id in groups:
-        bot.send_message(chat_id=update.message.chat.id, text="You have {0} points!".format(groups[update.message.chat.id].get_score()))
+        bot.send_message(chat_id=update.message.chat.id, text="יש לכם {0} נקודות :)".format(groups[update.message.chat.id].get_score()))
     else:
         # TODO: send something
         pass
@@ -106,6 +111,23 @@ def get_allscore(bot, update):
             bot.send_message(chat_id=update.message.chat.id, text=msg)
 
 
+def sendto(bot, update):
+    if admin_filter.filter(update.message):
+        try:
+            _, group_title, msg = update.message.text.split("###")
+            if group_title == "AlL":
+                for group in groups.values():
+                    bot.send_message(chat_id=group.id, text=msg)
+                return
+            group = [g for g in groups.values() if group_title == g.title]
+            if group:
+                group = group[0]
+                bot.send_message(chat_id=group.id, text=msg)
+            else:
+                bot.send_message(chat_id=update.message.chat.id, text="Group  not found.")
+        except ValueError:
+            bot.send_message(chat_id=update.message.chat.id, text="Bad command. got ValueError.")
+
 def main():
     try:
         updater = Updater(token=TOKEN)
@@ -113,6 +135,7 @@ def main():
         dispatcher.add_handler(CommandHandler('start', start))
         dispatcher.add_handler(CommandHandler('score', get_score))
         dispatcher.add_handler(CommandHandler('allscore', get_allscore))
+        dispatcher.add_handler(CommandHandler('sendto', sendto))
         dispatcher.add_handler(MessageHandler(Filters.photo & my_filter, save_photo))
         dispatcher.add_handler(MessageHandler(Filters.video & my_filter, save_vid))
         dispatcher.add_error_handler(error)
