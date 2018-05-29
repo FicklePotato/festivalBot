@@ -3,3 +3,4 @@ media
 *.log
 .idea
 __pycache__
+myToken.py

@@ -4,12 +4,13 @@
 from telegram.ext import CommandHandler, Updater, MessageHandler, Filters, BaseFilter
 from utils import gen_out_path, enter_dump_cycle
 from activity_logger import *
+from myToken import *
 import logging
 
 
 # TODO: manage to recover messages after being offline
 # TODO: change the token and take it from a local file
-TOKEN = "559626786:AAGKYE0MArTga7alcjpCltov9hjsHQuec9Y"
+
 ADMIN_IDS = [409589602, 596310448]
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO,
                     filename=r"err.log")
@@ -117,6 +118,7 @@ def sendto(bot, update):
             _, group_title, msg = update.message.text.split("###")
             if group_title == "AlL":
                 for group in groups.values():
+                    # TODO: make sure the bot is sending a msg only to groups it is part of.
                     bot.send_message(chat_id=group.id, text=msg)
                 return
             group = [g for g in groups.values() if group_title == g.title]
