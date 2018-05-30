@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ROOT_OUT_PATH = r"media"
 DUMP_TIME = 10
 MAX_TIMES = 3

@@ -118,7 +118,7 @@ def get_score(bot, update):
 
 def get_allscore(bot, update):
     if admin_filter.filter(update.message):
-        msg = '\r\n'.join([' - '.join((g.title, g.id, str(g.get_score()))) for g in groups.values()])
+        msg = '\r\n'.join([' - '.join((g.title, str(g.id), str(g.get_score()))) for g in groups.values()])
         if msg:
             bot.send_message(chat_id=update.message.chat.id, text=msg)
 
