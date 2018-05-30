@@ -2,16 +2,12 @@
 # -*- coding: utf-8 -*-
 
 from telegram.ext import CommandHandler, Updater, MessageHandler, Filters, BaseFilter
-from utils import gen_out_path, enter_dump_cycle
 from activity_logger import *
+from utils import enter_dump_cycle, gen_out_path
 from myToken import *
+from consts import *
 import logging
 
-
-# TODO: manage to recover messages after being offline
-# TODO: change the token and take it from a local file
-
-ADMIN_IDS = [409589602, 596310448]
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO,
                     filename=r"err.log")
 
@@ -24,10 +20,14 @@ groups = load_groups(JSON_PATH)
 def log_point(bot, update):
     try:
         mission = update.message.caption
-        if mission not in MISSION_SCORE:
-            return False
         if update.message.chat.id not in groups:
             groups[update.message.chat.id] = Group(update.message.chat.id, [], update.message.chat.title)
+        if mission not in MISSION_SCORE:
+            if mission is None:
+                bot.send_message(chat_id=update.message.chat.id, text="משימות בלי תיאור לא נחשבות :( שלחו את התמונה שוב עם מספר המשימה שהושלמה.".format(mission))
+            else:
+                bot.send_message(chat_id=update.message.chat.id, text="המשימה {0} לא קיימת.".format(mission))
+            return False
         if mission in groups[update.message.chat.id].completed_missions:
             bot.send_message(chat_id=update.message.chat.id, text="המשימה {0} כבר הושלמה.".format(mission))
             return False
@@ -76,9 +76,15 @@ def start(bot, update):
         bot.send_message(chat_id=update.message.chat.id, text="I'm a bot, please talk to me!")
 
 
+def first_message(bot, update):
+    if update.message.chat.id not in groups:
+        groups[update.message.chat.id] = Group(update.message.chat.id, [], update.message.chat.title)
+        bot.send_message(chat_id=update.message.chat.id, text=START_MSG)
+
+
 def help(bot, update):
     if my_filter.filter(update.message):
-        bot.send_message(chat_id=update.message.chat.id, text="/score - show your group's score.")
+        bot.send_message(chat_id=update.message.chat.id, text=HELP_MSG)
 
 
 def save_photo(bot, update):
@@ -99,15 +105,20 @@ def save_vid(bot, update):
 
 def get_score(bot, update):
     if update.message.chat.id in groups:
-        bot.send_message(chat_id=update.message.chat.id, text="יש לכם {0} נקודות :)".format(groups[update.message.chat.id].get_score()))
+        group = groups[update.message.chat.id]
+        bot.send_message(chat_id=update.message.chat.id, text="יש לכם {0} נקודות :)\r\n"
+                                                              "המשימות שהושלמו הן: {1}".format(group.get_score(),
+                                                            ', '.join(str(i) for i in group.completed_missions)))
+
     else:
-        # TODO: send something
-        pass
+        groups[update.message.chat.id] = Group(update.message.chat.id, [], update.message.chat.title)
+        bot.send_message(chat_id=update.message.chat.id,
+                         text="עוד לא קיבלתם נקודות :(".format(groups[update.message.chat.id].get_score()))
 
 
 def get_allscore(bot, update):
     if admin_filter.filter(update.message):
-        msg = '\r\n'.join([' - '.join((g.title, str(g.get_score()))) for g in groups.values()])
+        msg = '\r\n'.join([' - '.join((g.title, g.id, str(g.get_score()))) for g in groups.values()])
         if msg:
             bot.send_message(chat_id=update.message.chat.id, text=msg)
 
@@ -135,11 +146,13 @@ def main():
         updater = Updater(token=TOKEN)
         dispatcher = updater.dispatcher
         dispatcher.add_handler(CommandHandler('start', start))
+        dispatcher.add_handler(CommandHandler('help', help))
         dispatcher.add_handler(CommandHandler('score', get_score))
         dispatcher.add_handler(CommandHandler('allscore', get_allscore))
         dispatcher.add_handler(CommandHandler('sendto', sendto))
         dispatcher.add_handler(MessageHandler(Filters.photo & my_filter, save_photo))
         dispatcher.add_handler(MessageHandler(Filters.video & my_filter, save_vid))
+        dispatcher.add_handler(MessageHandler(Filters.text, first_message))
         dispatcher.add_error_handler(error)
         updater.start_polling()
         print("Running")

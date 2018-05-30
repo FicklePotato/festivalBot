@@ -1,10 +1,8 @@
 import os
 import time
 import sched
-from activity_logger import dump_groups, JSON_PATH
-
-ROOT_OUT_PATH = r"media"
-DUMP_TIME = 10
+from activity_logger import dump_groups
+from consts import *
 
 
 def gen_out_path(file_type="png", group_id="Default", prefix=None):

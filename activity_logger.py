@@ -1,11 +1,6 @@
 import json
 import os
-
-MAX_TIMES = 3
-MISSION_SCORE = {'1': 1, '2': 2, '3': 1}
-TITLE_LOC = 1
-MISSION_LOC = 0
-JSON_PATH = r"groups.json"
+from consts import *
 
 
 class Group(object):
